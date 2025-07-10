@@ -219,7 +219,6 @@ func (f *txtFsa) entry() state {
 
 		spacesDiff := int(math.Ceil(float64(f.spacesCount-f.prevSpaces) / float64(tabSpaces)))
 
-		// if f.prevSpaces == f.spacesCount {
 		if spacesDiff == 0 {
 			var parent *nodes.Node[string] = nil
 			if len(f.siblings) > 0 {
@@ -228,7 +227,6 @@ func (f *txtFsa) entry() state {
 			}
 			node.Parent = parent
 			f.siblings = append(f.siblings, node)
-			// } else if f.prevSpaces < f.spacesCount {
 		} else if spacesDiff > 0 {
 			var parent *nodes.Node[string] = nil
 			if len(f.siblings) > 0 {
@@ -246,7 +244,6 @@ func (f *txtFsa) entry() state {
 
 			node.Parent = parent
 			f.siblings = []*nodes.Node[string]{node}
-			// } else if f.prevSpaces > f.spacesCount {
 		} else if spacesDiff < 0 {
 			for _, node := range f.siblings {
 				if !f.yield(node) {
@@ -255,8 +252,11 @@ func (f *txtFsa) entry() state {
 			}
 
 			parent := f.siblings[len(f.siblings)-1].Parent
-			if parent != nil {
-				parent = parent.Parent
+			parentsLevel := -1 * spacesDiff
+			for i := 0; i < parentsLevel; i++ {
+				if parent != nil {
+					parent = parent.Parent
+				}
 			}
 			node.Parent = parent
 
