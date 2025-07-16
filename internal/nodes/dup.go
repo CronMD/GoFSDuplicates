@@ -64,7 +64,6 @@ func (f *DupFinder[T]) mergeParents(dups [][]*Node[T]) [][]*Node[T] {
 	type dupsPath struct {
 		path     []int
 		pathSum  int
-		isUnique bool
 		node     *Node[T]
 		children map[*dupsPath]bool
 	}
@@ -75,9 +74,7 @@ func (f *DupFinder[T]) mergeParents(dups [][]*Node[T]) [][]*Node[T] {
 
 	dupsCount := 1
 	for _, nodes := range dups {
-		isUnique := false
 		if len(nodes) < 2 {
-			isUnique = true
 			result = append(result, nodes)
 		}
 
@@ -86,7 +83,6 @@ func (f *DupFinder[T]) mergeParents(dups [][]*Node[T]) [][]*Node[T] {
 			curPath := &dupsPath{
 				path:     []int{dupsCount},
 				children: map[*dupsPath]bool{},
-				isUnique: isUnique,
 				node:     node,
 				pathSum:  0,
 			}
@@ -110,7 +106,6 @@ func (f *DupFinder[T]) mergeParents(dups [][]*Node[T]) [][]*Node[T] {
 				curPath = &dupsPath{
 					path:     []int{-1},
 					pathSum:  -1,
-					isUnique: isUnique,
 					node:     prevPath.node.Parent,
 					children: map[*dupsPath]bool{},
 				}
@@ -121,7 +116,6 @@ func (f *DupFinder[T]) mergeParents(dups [][]*Node[T]) [][]*Node[T] {
 
 			curPath.path = append(curPath.path, dupsCount)
 			curPath.pathSum += dupsCount
-			curPath.isUnique = curPath.isUnique || isUnique
 			curPath.children[prevPath] = true
 
 			delete(topmost, prevPath)
@@ -191,7 +185,7 @@ func (f *DupFinder[T]) mergeParents(dups [][]*Node[T]) [][]*Node[T] {
 			continue
 		}
 
-		if len(group) > 1 && !path.isUnique {
+		if len(group) > 1 {
 			parents := make(map[*Node[T]]bool)
 			for _, groupPath := range group {
 				parents[groupPath.node] = true
