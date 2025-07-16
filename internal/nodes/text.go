@@ -1,7 +1,6 @@
-package sources
+package nodes
 
 import (
-	"df/internal/nodes"
 	"iter"
 	"math"
 )
@@ -18,14 +17,14 @@ func NewTxtSource(txt string) *TxtSource {
 	}
 }
 
-func (s *TxtSource) Leafs() iter.Seq[*nodes.Node[string]] {
+func (s *TxtSource) Leafs() iter.Seq[*Node[string]] {
 
-	return func(yield func(*nodes.Node[string]) bool) {
+	return func(yield func(*Node[string]) bool) {
 		(&txtFsa{
 			txt:        []rune(s.txt),
 			curPayload: make([]rune, 0),
 			yield:      yield,
-			siblings:   make([]*nodes.Node[string], 0),
+			siblings:   make([]*Node[string], 0),
 		}).start()
 	}
 }
@@ -38,8 +37,8 @@ type txtFsa struct {
 	prevSpaces  int
 	pos         int
 	curPayload  []rune
-	yield       func(*nodes.Node[string]) bool
-	siblings    []*nodes.Node[string]
+	yield       func(*Node[string]) bool
+	siblings    []*Node[string]
 }
 
 func (f *txtFsa) start() {
@@ -81,14 +80,14 @@ func (f *txtFsa) entry() state {
 	switch cur {
 	case '\n', 0:
 		payload := string(f.curPayload)
-		node := &nodes.Node[string]{
+		node := &Node[string]{
 			Payload: payload,
 		}
 
 		spacesDiff := int(math.Ceil(float64(f.spacesCount-f.prevSpaces) / float64(tabSpaces)))
 
 		if spacesDiff == 0 {
-			var parent *nodes.Node[string] = nil
+			var parent *Node[string] = nil
 			if len(f.siblings) > 0 {
 				parent = f.siblings[len(f.siblings)-1].Parent
 
@@ -96,7 +95,7 @@ func (f *txtFsa) entry() state {
 			node.Parent = parent
 			f.siblings = append(f.siblings, node)
 		} else if spacesDiff > 0 {
-			var parent *nodes.Node[string] = nil
+			var parent *Node[string] = nil
 			if len(f.siblings) > 0 {
 				for _, node := range f.siblings[0 : len(f.siblings)-1] {
 					if !f.yield(node) {
@@ -111,7 +110,7 @@ func (f *txtFsa) entry() state {
 			}
 
 			node.Parent = parent
-			f.siblings = []*nodes.Node[string]{node}
+			f.siblings = []*Node[string]{node}
 		} else if spacesDiff < 0 {
 			for _, node := range f.siblings {
 				if !f.yield(node) {
@@ -128,7 +127,7 @@ func (f *txtFsa) entry() state {
 			}
 			node.Parent = parent
 
-			f.siblings = []*nodes.Node[string]{node}
+			f.siblings = []*Node[string]{node}
 		}
 
 		f.curPayload = []rune{}

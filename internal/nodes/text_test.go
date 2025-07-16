@@ -1,7 +1,6 @@
-package sources
+package nodes
 
 import (
-	"df/internal/nodes"
 	"fmt"
 	"iter"
 	"testing"
@@ -10,7 +9,7 @@ import (
 func TestParseEmpty(t *testing.T) {
 	txt := `
 	`
-	leafsSlice := make([]*nodes.Node[string], 0)
+	leafsSlice := make([]*Node[string], 0)
 	for leaf := range NewTxtSource(txt).Leafs() {
 		leafsSlice = append(leafsSlice, leaf)
 	}
@@ -28,10 +27,10 @@ func TestParseToplevelFiles(t *testing.T) {
 	assertLeafs(
 		t,
 		NewTxtSource(txt).Leafs(),
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f1",
 		},
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f2",
 		},
 	)
@@ -44,18 +43,18 @@ func TestParseDir(t *testing.T) {
 			f2
 	`
 
-	d1 := &nodes.Node[string]{
+	d1 := &Node[string]{
 		Payload: "d1",
 	}
 
 	assertLeafs(
 		t,
 		NewTxtSource(txt).Leafs(),
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f1",
 			Parent:  d1,
 		},
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f2",
 			Parent:  d1,
 		},
@@ -72,30 +71,30 @@ func TestSameLevelDir(t *testing.T) {
 			f4
 	`
 
-	d1 := &nodes.Node[string]{
+	d1 := &Node[string]{
 		Payload: "d1",
 	}
 
-	d2 := &nodes.Node[string]{
+	d2 := &Node[string]{
 		Payload: "d2",
 	}
 
 	assertLeafs(
 		t,
 		NewTxtSource(txt).Leafs(),
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f1",
 			Parent:  d1,
 		},
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f2",
 			Parent:  d1,
 		},
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f3",
 			Parent:  d2,
 		},
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f4",
 			Parent:  d2,
 		},
@@ -116,20 +115,20 @@ func TestMultiLevel(t *testing.T) {
 				f2
 	`
 
-	d1 := &nodes.Node[string]{
+	d1 := &Node[string]{
 		Payload: "d1",
 	}
 
-	d2 := &nodes.Node[string]{
+	d2 := &Node[string]{
 		Payload: "d2",
 	}
 
-	d3 := &nodes.Node[string]{
+	d3 := &Node[string]{
 		Payload: "d3",
 		Parent:  d2,
 	}
 
-	d4 := &nodes.Node[string]{
+	d4 := &Node[string]{
 		Payload: "d4",
 		Parent:  d2,
 	}
@@ -137,27 +136,27 @@ func TestMultiLevel(t *testing.T) {
 	assertLeafs(
 		t,
 		NewTxtSource(txt).Leafs(),
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f1",
 			Parent:  d1,
 		},
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f2",
 			Parent:  d1,
 		},
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f3",
 			Parent:  d3,
 		},
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f4",
 			Parent:  d3,
 		},
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f1",
 			Parent:  d4,
 		},
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f2",
 			Parent:  d4,
 		},
@@ -178,21 +177,21 @@ func TestMultiLevel2(t *testing.T) {
 			f2
 	`
 
-	d1 := &nodes.Node[string]{
+	d1 := &Node[string]{
 		Payload: "d1",
 	}
 
-	d2 := &nodes.Node[string]{
+	d2 := &Node[string]{
 		Payload: "d2",
 		Parent:  d1,
 	}
 
-	d3 := &nodes.Node[string]{
+	d3 := &Node[string]{
 		Payload: "d3",
 		Parent:  d2,
 	}
 
-	d4 := &nodes.Node[string]{
+	d4 := &Node[string]{
 		Payload: "d4",
 		Parent:  d1,
 	}
@@ -200,27 +199,27 @@ func TestMultiLevel2(t *testing.T) {
 	assertLeafs(
 		t,
 		NewTxtSource(txt).Leafs(),
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f3",
 			Parent:  d2,
 		},
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f4",
 			Parent:  d3,
 		},
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f1",
 			Parent:  d4,
 		},
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f2",
 			Parent:  d4,
 		},
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f1",
 			Parent:  d1,
 		},
-		&nodes.Node[string]{
+		&Node[string]{
 			Payload: "f2",
 			Parent:  d1,
 		},
@@ -229,9 +228,9 @@ func TestMultiLevel2(t *testing.T) {
 
 func assertLeafs(
 	t *testing.T,
-	leafsSeq iter.Seq[*nodes.Node[string]],
-	expected ...*nodes.Node[string]) {
-	actual := []*nodes.Node[string]{}
+	leafsSeq iter.Seq[*Node[string]],
+	expected ...*Node[string]) {
+	actual := []*Node[string]{}
 	for leaf := range leafsSeq {
 		actual = append(actual, leaf)
 	}
@@ -261,7 +260,7 @@ func assertLeafs(
 	}
 }
 
-func fail(t *testing.T, actual []*nodes.Node[string], expected []*nodes.Node[string]) {
+func fail(t *testing.T, actual []*Node[string], expected []*Node[string]) {
 	t.Fatal(
 		"actual",
 		nodes2txt(actual),
@@ -270,8 +269,8 @@ func fail(t *testing.T, actual []*nodes.Node[string], expected []*nodes.Node[str
 	)
 }
 
-func nodes2txt(pNodes []*nodes.Node[string]) string {
-	sNodes := []nodes.Node[string]{}
+func nodes2txt(pNodes []*Node[string]) string {
+	sNodes := []Node[string]{}
 	for _, pNode := range pNodes {
 		sNodes = append(sNodes, *pNode)
 	}
