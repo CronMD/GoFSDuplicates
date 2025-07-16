@@ -55,7 +55,6 @@ func (s *MultipleDirsFsDataSource) Leafs() iter.Seq[*nodes.Node[FsData]] {
 func (s *MultipleDirsFsDataSource) readDir(dirPath string) []*nodes.Node[FsData] {
 	if dirPath[len(dirPath)-1] != filepath.Separator {
 		dirPath = fmt.Sprintf("%s%c", dirPath, filepath.Separator)
-		fmt.Println(dirPath)
 	}
 
 	parents := map[string]*nodes.Node[FsData]{}

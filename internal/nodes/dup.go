@@ -1,7 +1,6 @@
 package nodes
 
 import (
-	"fmt"
 	"slices"
 )
 
@@ -165,10 +164,6 @@ func (f *DupFinder[T]) mergeParents(dups [][]*Node[T]) [][]*Node[T] {
 		}
 
 		groupedPaths[curPath] = curGrop
-
-		if len(curGrop) > 1 {
-			fmt.Println(curGrop)
-		}
 	}
 
 	fringe := make([]*dupsPath, 0)
