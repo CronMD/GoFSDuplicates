@@ -2,6 +2,7 @@ package sources
 
 import (
 	"df/internal/nodes"
+	"fmt"
 	"io/fs"
 	"iter"
 	"log"
@@ -52,6 +53,11 @@ func (s *MultipleDirsFsDataSource) Leafs() iter.Seq[*nodes.Node[FsData]] {
 }
 
 func (s *MultipleDirsFsDataSource) readDir(dirPath string) []*nodes.Node[FsData] {
+	if dirPath[len(dirPath)-1] != filepath.Separator {
+		dirPath = fmt.Sprintf("%s%c", dirPath, filepath.Separator)
+		fmt.Println(dirPath)
+	}
+
 	parents := map[string]*nodes.Node[FsData]{}
 	leafs := make([]*nodes.Node[FsData], 0)
 	filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
