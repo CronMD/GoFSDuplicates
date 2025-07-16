@@ -1,6 +1,7 @@
 package main
 
 import (
+	humansize "df/cmd/find-dups/human-size"
 	"df/internal/indexers"
 	"df/internal/nodes"
 	"df/internal/sources"
@@ -23,9 +24,6 @@ func main() {
 	}
 
 	src := sources.NewMultipleDirsFsDataSource(dirs...)
-	for leaf := range src.Leafs() {
-		fmt.Println(leaf)
-	}
 
 	finder := nodes.NewDupFinder[sources.FsData]([]nodes.Indexer[sources.FsData]{
 		indexers.NewNameSizeFsIndexer(),
@@ -47,7 +45,10 @@ func main() {
 		}
 
 		for _, node := range nodes {
-			fmt.Printf("\t%s %d\n", node.Payload.Path, node.Payload.Size)
+			fmt.Printf(
+				"\t%s %s\n",
+				node.Payload.Path,
+				humansize.SizeToString(node.Payload.Size))
 		}
 
 		fmt.Println()
