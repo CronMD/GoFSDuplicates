@@ -25,7 +25,7 @@ func main() {
 
 	src := sources.NewMultipleDirsFsDataSource(dirs...)
 
-	finder := nodes.NewDupFinder[sources.FsData]([]nodes.Indexer[sources.FsData]{
+	finder := nodes.NewDupFinder([]nodes.Indexer[sources.FsData]{
 		indexers.NewNameSizeFsIndexer(),
 	})
 

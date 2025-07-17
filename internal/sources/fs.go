@@ -94,5 +94,13 @@ func (s *MultipleDirsFsDataSource) readDir(dirPath string) []*nodes.Node[FsData]
 		return nil
 	})
 
+	for _, node := range leafs {
+		size := node.Payload.Size
+		for node.Parent != nil {
+			node.Parent.Payload.Size += size
+			node = node.Parent
+		}
+	}
+
 	return leafs
 }
