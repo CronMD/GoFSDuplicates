@@ -384,6 +384,55 @@ func TestSeveralNestedDirs(t *testing.T) {
 	)
 }
 
+func TestNestedNotEqualDirs1(t *testing.T) {
+	finder := newTestFinder()
+
+	assertNodes(
+		t,
+		finder.FindFromSources(
+			NewTxtSource(`
+			td1
+				d1
+					f1
+				d2
+					f2
+			
+			td2
+				d3
+					f1
+			`),
+		),
+		[][]*Node[string]{
+			{
+				&Node[string]{
+					Payload: "d1",
+					Parent: &Node[string]{
+						Payload: "td1",
+						Parent:  nil,
+					},
+				},
+				&Node[string]{
+					Payload: "td2",
+					Parent:  nil,
+				},
+			},
+
+			{
+				&Node[string]{
+					Payload: "f2",
+					Parent: &Node[string]{
+						Payload: "d2",
+						Parent: &Node[string]{
+							Payload: "td1",
+							Parent:  nil,
+						},
+					},
+				},
+			},
+		},
+	)
+}
+
 func TestNestedNotEqualDirs2(t *testing.T) {
 	finder := newTestFinder()
 
@@ -465,7 +514,52 @@ func TestMltipleRootsDuplicatedDirs(t *testing.T) {
 	)
 }
 
-func TestNestedNotEqualDirs1(t *testing.T) {
+func TestTwoEqualDirsOfFour(t *testing.T) {
+	finder := newTestFinder()
+
+	assertNodes(
+		t,
+		finder.FindFromSources(
+			NewTxtSource(`
+			d1
+				f1
+				f2
+			d2
+				f1
+			d3
+				f1
+				f2
+			d4
+				f1
+			`),
+		),
+		[][]*Node[string]{
+			{
+				&Node[string]{
+					Payload: "d1",
+					Parent:  nil,
+				},
+				&Node[string]{
+					Payload: "d3",
+					Parent:  nil,
+				},
+			},
+
+			{
+				&Node[string]{
+					Payload: "d2",
+					Parent:  nil,
+				},
+				&Node[string]{
+					Payload: "d4",
+					Parent:  nil,
+				},
+			},
+		},
+	)
+}
+
+func TestDeepNestedEqual(t *testing.T) {
 	finder := newTestFinder()
 
 	assertNodes(
@@ -473,41 +567,30 @@ func TestNestedNotEqualDirs1(t *testing.T) {
 		finder.FindFromSources(
 			NewTxtSource(`
 			td1
-				d1
-					f1
-				d2
-					f2
-			
+				p1_3
+					p1_2
+						p1_1
+							d1
+								f1
+				f2
 			td2
-				d3
-					f1
+				p2_3
+					p2_2
+						p2_1
+							d2
+								f1
+				f2
 			`),
 		),
 		[][]*Node[string]{
 			{
 				&Node[string]{
-					Payload: "d1",
-					Parent: &Node[string]{
-						Payload: "td1",
-						Parent:  nil,
-					},
+					Payload: "td1",
+					Parent:  nil,
 				},
 				&Node[string]{
 					Payload: "td2",
 					Parent:  nil,
-				},
-			},
-
-			{
-				&Node[string]{
-					Payload: "f2",
-					Parent: &Node[string]{
-						Payload: "d2",
-						Parent: &Node[string]{
-							Payload: "td1",
-							Parent:  nil,
-						},
-					},
 				},
 			},
 		},
@@ -532,19 +615,17 @@ func assertNodes(t *testing.T, actual [][]*Node[string], expected [][]*Node[stri
 	}
 
 	cmpNodes := func(node1, node2 *Node[string]) int {
-		diff := strings.Compare(node1.Payload, node2.Payload)
-		for diff == 0 {
-			node1 = node1.Parent
-			node2 = node2.Parent
-
-			if node1 == nil || node2 == nil {
-				break
+		for node1 != nil && node2 != nil {
+			diff := strings.Compare(node1.Payload, node2.Payload)
+			if diff != 0 {
+				return diff
 			}
 
-			diff = strings.Compare(node1.Payload, node2.Payload)
+			node1 = node1.Parent
+			node2 = node2.Parent
 		}
 
-		return diff
+		return 0
 	}
 
 	cmpDups := func(nodes1, nodes2 []*Node[string]) int {
@@ -566,12 +647,17 @@ func assertNodes(t *testing.T, actual [][]*Node[string], expected [][]*Node[stri
 		return 0
 	}
 
-	slices.SortFunc(actual, cmpDups)
-	slices.SortFunc(expected, cmpDups)
-
 	if len(actual) != len(expected) {
 		fail()
 		return
+	}
+
+	slices.SortFunc(actual, cmpDups)
+	slices.SortFunc(expected, cmpDups)
+
+	if len(actual) == 1 {
+		slices.SortFunc(actual[0], cmpNodes)
+		slices.SortFunc(expected[0], cmpNodes)
 	}
 
 	for i, actualNodes := range actual {
