@@ -53,4 +53,10 @@ func main() {
 
 		fmt.Println()
 	}
+
+	/*
+		Problems:
+			-append - changes base group
+			-SortFunc - not sorting elementswith len 1
+	*/
 }
