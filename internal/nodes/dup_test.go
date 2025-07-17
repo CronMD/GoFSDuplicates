@@ -345,6 +345,175 @@ func TestNestedEqualDirs(t *testing.T) {
 	)
 }
 
+func TestSeveralNestedDirs(t *testing.T) {
+	finder := newTestFinder()
+
+	topDir1 := &Node[string]{
+		Payload: "td1",
+		Parent:  nil,
+	}
+
+	topDir2 := &Node[string]{
+		Payload: "td2",
+		Parent:  nil,
+	}
+
+	assertNodes(
+		t,
+		finder.FindFromSources(
+			NewTxtSource(`
+			td1
+				d1
+					f1
+				d2
+					f2
+			
+			td2
+				d3
+					f1
+				d4
+					f2
+			`),
+		),
+		[][]*Node[string]{
+			{
+				topDir1,
+				topDir2,
+			},
+		},
+	)
+}
+
+func TestNestedNotEqualDirs2(t *testing.T) {
+	finder := newTestFinder()
+
+	assertNodes(
+		t,
+		finder.FindFromSources(
+			NewTxtSource(`
+			td1
+				d1
+					f1
+				d2
+					f2
+			
+			td2
+				d4
+					f2
+			`),
+		),
+		[][]*Node[string]{
+			{
+				&Node[string]{
+					Payload: "d2",
+					Parent: &Node[string]{
+						Payload: "td1",
+						Parent:  nil,
+					},
+				},
+				&Node[string]{
+					Payload: "td2",
+					Parent:  nil,
+				},
+			},
+
+			{
+				&Node[string]{
+					Payload: "f1",
+					Parent: &Node[string]{
+						Payload: "d1",
+						Parent: &Node[string]{
+							Payload: "td1",
+							Parent:  nil,
+						},
+					},
+				},
+			},
+		},
+	)
+}
+
+func TestMltipleRootsDuplicatedDirs(t *testing.T) {
+	finder := newTestFinder()
+
+	assertNodes(
+		t,
+		finder.FindFromSources(
+			NewTxtSource(`
+			td1
+				d1
+					f1
+				f2
+			td2
+				d2
+					f1
+				f2
+			`),
+		),
+		[][]*Node[string]{
+			{
+				&Node[string]{
+					Payload: "td1",
+					Parent:  nil,
+				},
+				&Node[string]{
+					Payload: "td2",
+					Parent:  nil,
+				},
+			},
+		},
+	)
+}
+
+func TestNestedNotEqualDirs1(t *testing.T) {
+	finder := newTestFinder()
+
+	assertNodes(
+		t,
+		finder.FindFromSources(
+			NewTxtSource(`
+			td1
+				d1
+					f1
+				d2
+					f2
+			
+			td2
+				d3
+					f1
+			`),
+		),
+		[][]*Node[string]{
+			{
+				&Node[string]{
+					Payload: "d1",
+					Parent: &Node[string]{
+						Payload: "td1",
+						Parent:  nil,
+					},
+				},
+				&Node[string]{
+					Payload: "td2",
+					Parent:  nil,
+				},
+			},
+
+			{
+				&Node[string]{
+					Payload: "f2",
+					Parent: &Node[string]{
+						Payload: "d2",
+						Parent: &Node[string]{
+							Payload: "td1",
+							Parent:  nil,
+						},
+					},
+				},
+			},
+		},
+	)
+}
+
 type equalPayloadIndexer struct{}
 
 func (i *equalPayloadIndexer) Index(node *Node[string]) interface{} {
