@@ -165,7 +165,6 @@ func (f *DupFinder[T]) mergeParents(dups [][]*Node[T]) [][]*Node[T] {
 		for _, path := range curGrop {
 			groupedPaths[path] = curGrop
 		}
-		// groupedPaths[curPath] = curGrop
 	}
 
 	fringe := make([]*dupsPath, 0)
