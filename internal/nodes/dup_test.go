@@ -88,6 +88,61 @@ func TestSameDirs(t *testing.T) {
 	)
 }
 
+func TestUniqueFiles(t *testing.T) {
+	finder := newTestFinder()
+
+	dir1 := &Node[string]{
+		Payload: "d1",
+		Parent:  nil,
+	}
+
+	dir2 := &Node[string]{
+		Payload: "d2",
+		Parent:  nil,
+	}
+
+	dir3 := &Node[string]{
+		Payload: "d3",
+		Parent:  nil,
+	}
+
+	assertNodes(
+		t,
+		finder.FindFromSources(
+			NewTxtSource(`
+			d1
+				f1
+			d2
+				f2
+			d3
+				f3
+			`),
+		),
+		[][]*Node[string]{
+			{
+				&Node[string]{
+					Payload: "f1",
+					Parent:  dir1,
+				},
+			},
+
+			{
+				&Node[string]{
+					Payload: "f2",
+					Parent:  dir2,
+				},
+			},
+
+			{
+				&Node[string]{
+					Payload: "f3",
+					Parent:  dir3,
+				},
+			},
+		},
+	)
+}
+
 type equalPayloadIndexer struct{}
 
 func (i *equalPayloadIndexer) Index(node *Node[string]) interface{} {

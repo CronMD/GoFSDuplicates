@@ -83,7 +83,7 @@ func (f *DupFinder[T]) mergeParents(dups [][]*Node[T]) [][]*Node[T] {
 				path:     []int{dupsCount},
 				children: map[*dupsPath]bool{},
 				node:     node,
-				pathSum:  0,
+				pathSum:  dupsCount,
 			}
 			pathsMap[node] = curPath
 			paths = append(paths, curPath)
@@ -134,7 +134,7 @@ func (f *DupFinder[T]) mergeParents(dups [][]*Node[T]) [][]*Node[T] {
 
 		lenDiff := len(p1.path) - len(p2.path)
 		if lenDiff != 0 {
-			return 0
+			return lenDiff
 		}
 
 		for i, dupNum := range p1.path {
