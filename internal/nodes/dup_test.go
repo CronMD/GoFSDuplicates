@@ -54,7 +54,7 @@ func TestSameFilesAtRoot(t *testing.T) {
 	)
 }
 
-func TestSameDirs(t *testing.T) {
+func TestTwoSameDirs(t *testing.T) {
 	finder := newTestFinder()
 
 	dir1 := &Node[string]{
@@ -138,6 +138,208 @@ func TestUniqueFiles(t *testing.T) {
 					Payload: "f3",
 					Parent:  dir3,
 				},
+			},
+		},
+	)
+}
+
+func TestEqualFiles(t *testing.T) {
+	finder := newTestFinder()
+
+	dir1 := &Node[string]{
+		Payload: "d1",
+		Parent:  nil,
+	}
+
+	dir2 := &Node[string]{
+		Payload: "d2",
+		Parent:  nil,
+	}
+
+	dir3 := &Node[string]{
+		Payload: "d3",
+		Parent:  nil,
+	}
+
+	assertNodes(
+		t,
+		finder.FindFromSources(
+			NewTxtSource(`
+			d1
+				f1
+			d2
+				f2
+				f1
+			d3
+				f3
+			`),
+		),
+		[][]*Node[string]{
+			{
+				&Node[string]{
+					Payload: "f1",
+					Parent:  dir1,
+				},
+				&Node[string]{
+					Payload: "f1",
+					Parent:  dir2,
+				},
+			},
+
+			{
+				&Node[string]{
+					Payload: "f2",
+					Parent:  dir2,
+				},
+			},
+
+			{
+				&Node[string]{
+					Payload: "f3",
+					Parent:  dir3,
+				},
+			},
+		},
+	)
+}
+
+func TestExcessFiles(t *testing.T) {
+	finder := newTestFinder()
+
+	dir1 := &Node[string]{
+		Payload: "d1",
+		Parent:  nil,
+	}
+
+	dir2 := &Node[string]{
+		Payload: "d2",
+		Parent:  nil,
+	}
+
+	dir3 := &Node[string]{
+		Payload: "d3",
+		Parent:  nil,
+	}
+
+	assertNodes(
+		t,
+		finder.FindFromSources(
+			NewTxtSource(`
+			d1
+				f1
+				f2
+			d2
+				f2
+				f1
+				f3
+			d3
+				f3
+			`),
+		),
+		[][]*Node[string]{
+			{
+				&Node[string]{
+					Payload: "f1",
+					Parent:  dir1,
+				},
+				&Node[string]{
+					Payload: "f1",
+					Parent:  dir2,
+				},
+			},
+
+			{
+				&Node[string]{
+					Payload: "f2",
+					Parent:  dir1,
+				},
+				&Node[string]{
+					Payload: "f2",
+					Parent:  dir2,
+				},
+			},
+
+			{
+				&Node[string]{
+					Payload: "f3",
+					Parent:  dir2,
+				},
+				&Node[string]{
+					Payload: "f3",
+					Parent:  dir3,
+				},
+			},
+		},
+	)
+}
+
+func TestFilesCopies(t *testing.T) {
+	finder := newTestFinder()
+
+	dir1 := &Node[string]{
+		Payload: "d1",
+		Parent:  nil,
+	}
+
+	dir2 := &Node[string]{
+		Payload: "d2",
+		Parent:  nil,
+	}
+
+	assertNodes(
+		t,
+		finder.FindFromSources(
+			NewTxtSource(`
+			d1
+				f1
+				f1
+				f2
+			d2
+				f1
+				f1
+				f2
+			`),
+		),
+		[][]*Node[string]{
+			{
+				dir1,
+				dir2,
+			},
+		},
+	)
+}
+
+func TestNestedEqualDirs(t *testing.T) {
+	finder := newTestFinder()
+
+	topDir1 := &Node[string]{
+		Payload: "td1",
+		Parent:  nil,
+	}
+
+	topDir2 := &Node[string]{
+		Payload: "td2",
+		Parent:  nil,
+	}
+
+	assertNodes(
+		t,
+		finder.FindFromSources(
+			NewTxtSource(`
+			td1
+				d1
+					f1
+					f2
+			td2
+				d2
+					f1
+					f2
+			`),
+		),
+		[][]*Node[string]{
+			{
+				topDir1,
+				topDir2,
 			},
 		},
 	)
