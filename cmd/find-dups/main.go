@@ -53,10 +53,4 @@ func main() {
 
 		fmt.Println()
 	}
-
-	/*
-		Problems:
-			-append - creates new group pointer
-			-SortFunc - does not sorting elementswith len 1
-	*/
 }
