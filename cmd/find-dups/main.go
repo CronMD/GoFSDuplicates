@@ -15,6 +15,7 @@ import (
 func main() {
 	dirsParam := flag.String("dirs", "", "comma separated dir paths")
 	useHashParam := flag.Bool("hash", false, "check files hashes")
+	failOnError := flag.Bool("fail", false, "fail on error")
 	flag.Parse()
 
 	dirs := make([]string, 0)
@@ -31,7 +32,7 @@ func main() {
 		indexers.NewNameSizeFsIndexer(),
 	}
 	if *useHashParam {
-		ixs = append(ixs, indexers.NewHashFsIndexer(0.02, true))
+		ixs = append(ixs, indexers.NewHashFsIndexer(0.02, !*failOnError))
 	}
 
 	finder := nodes.NewDupFinder(ixs)
