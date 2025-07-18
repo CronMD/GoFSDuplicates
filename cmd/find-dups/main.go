@@ -13,6 +13,7 @@ import (
 
 func main() {
 	dirsParam := flag.String("dirs", "", "comma separated dir paths")
+	useHashParam := flag.Bool("hash", false, "check files hashes")
 	flag.Parse()
 
 	dirs := make([]string, 0)
@@ -25,9 +26,14 @@ func main() {
 
 	src := sources.NewMultipleDirsFsDataSource(dirs...)
 
-	finder := nodes.NewDupFinder([]nodes.Indexer[sources.FsData]{
+	ixs := []nodes.Indexer[sources.FsData]{
 		indexers.NewNameSizeFsIndexer(),
-	})
+	}
+	if *useHashParam {
+		ixs = append(ixs, indexers.NewHashFsIndexer(0.02))
+	}
+
+	finder := nodes.NewDupFinder(ixs)
 
 	duplicates := finder.FindFromSources(src)
 	slices.SortFunc(duplicates, func(nodes1, nodes2 []*nodes.Node[sources.FsData]) int {
