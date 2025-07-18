@@ -9,7 +9,11 @@ import (
 func TestEmpty(t *testing.T) {
 	finder := newTestFinder()
 
-	result := finder.FindFromLeafs()
+	result, err := finder.FindFromLeafs()
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
 
 	if len(result) != 0 {
 		t.Fatal("0 size exppected, got", len(result))
@@ -17,17 +21,14 @@ func TestEmpty(t *testing.T) {
 }
 
 func TestSameFilesAtRoot(t *testing.T) {
-	finder := newTestFinder()
-	assertNodes(
+	assertTxt(
 		t,
-		finder.FindFromSources(
-			NewTxtSource(`
-			f1
-			f2
-			f1
-			f2
-			`),
-		),
+		`
+		f1
+		f2
+		f1
+		f2
+		`,
 		[][]*Node[string]{
 			{
 				&Node[string]{
@@ -55,8 +56,6 @@ func TestSameFilesAtRoot(t *testing.T) {
 }
 
 func TestTwoSameDirs(t *testing.T) {
-	finder := newTestFinder()
-
 	dir1 := &Node[string]{
 		Payload: "d1",
 		Parent:  nil,
@@ -67,18 +66,16 @@ func TestTwoSameDirs(t *testing.T) {
 		Parent:  nil,
 	}
 
-	assertNodes(
+	assertTxt(
 		t,
-		finder.FindFromSources(
-			NewTxtSource(`
-			d1
-				f1
-				f2
-			d2
-				f1
-				f2
-			`),
-		),
+		`
+		d1
+			f1
+			f2
+		d2
+			f1
+			f2
+		`,
 		[][]*Node[string]{
 			{
 				dir1,
@@ -89,8 +86,6 @@ func TestTwoSameDirs(t *testing.T) {
 }
 
 func TestUniqueFiles(t *testing.T) {
-	finder := newTestFinder()
-
 	dir1 := &Node[string]{
 		Payload: "d1",
 		Parent:  nil,
@@ -106,18 +101,16 @@ func TestUniqueFiles(t *testing.T) {
 		Parent:  nil,
 	}
 
-	assertNodes(
+	assertTxt(
 		t,
-		finder.FindFromSources(
-			NewTxtSource(`
-			d1
-				f1
-			d2
-				f2
-			d3
-				f3
-			`),
-		),
+		`
+		d1
+			f1
+		d2
+			f2
+		d3
+			f3
+		`,
 		[][]*Node[string]{
 			{
 				&Node[string]{
@@ -144,8 +137,6 @@ func TestUniqueFiles(t *testing.T) {
 }
 
 func TestEqualFiles(t *testing.T) {
-	finder := newTestFinder()
-
 	dir1 := &Node[string]{
 		Payload: "d1",
 		Parent:  nil,
@@ -161,19 +152,17 @@ func TestEqualFiles(t *testing.T) {
 		Parent:  nil,
 	}
 
-	assertNodes(
+	assertTxt(
 		t,
-		finder.FindFromSources(
-			NewTxtSource(`
-			d1
-				f1
-			d2
-				f2
-				f1
-			d3
-				f3
-			`),
-		),
+		`
+		d1
+			f1
+		d2
+			f2
+			f1
+		d3
+			f3
+		`,
 		[][]*Node[string]{
 			{
 				&Node[string]{
@@ -204,8 +193,6 @@ func TestEqualFiles(t *testing.T) {
 }
 
 func TestExcessFiles(t *testing.T) {
-	finder := newTestFinder()
-
 	dir1 := &Node[string]{
 		Payload: "d1",
 		Parent:  nil,
@@ -221,21 +208,19 @@ func TestExcessFiles(t *testing.T) {
 		Parent:  nil,
 	}
 
-	assertNodes(
+	assertTxt(
 		t,
-		finder.FindFromSources(
-			NewTxtSource(`
-			d1
-				f1
-				f2
-			d2
-				f2
-				f1
-				f3
-			d3
-				f3
-			`),
-		),
+		`
+		d1
+			f1
+			f2
+		d2
+			f2
+			f1
+			f3
+		d3
+			f3
+		`,
 		[][]*Node[string]{
 			{
 				&Node[string]{
@@ -274,8 +259,6 @@ func TestExcessFiles(t *testing.T) {
 }
 
 func TestFilesCopies(t *testing.T) {
-	finder := newTestFinder()
-
 	dir1 := &Node[string]{
 		Payload: "d1",
 		Parent:  nil,
@@ -286,20 +269,18 @@ func TestFilesCopies(t *testing.T) {
 		Parent:  nil,
 	}
 
-	assertNodes(
+	assertTxt(
 		t,
-		finder.FindFromSources(
-			NewTxtSource(`
-			d1
-				f1
-				f1
-				f2
-			d2
-				f1
-				f1
-				f2
-			`),
-		),
+		`
+		d1
+			f1
+			f1
+			f2
+		d2
+			f1
+			f1
+			f2
+		`,
 		[][]*Node[string]{
 			{
 				dir1,
@@ -310,8 +291,6 @@ func TestFilesCopies(t *testing.T) {
 }
 
 func TestNestedEqualDirs(t *testing.T) {
-	finder := newTestFinder()
-
 	topDir1 := &Node[string]{
 		Payload: "td1",
 		Parent:  nil,
@@ -322,20 +301,18 @@ func TestNestedEqualDirs(t *testing.T) {
 		Parent:  nil,
 	}
 
-	assertNodes(
+	assertTxt(
 		t,
-		finder.FindFromSources(
-			NewTxtSource(`
-			td1
-				d1
-					f1
-					f2
-			td2
-				d2
-					f1
-					f2
-			`),
-		),
+		`
+		td1
+			d1
+				f1
+				f2
+		td2
+			d2
+				f1
+				f2
+		`,
 		[][]*Node[string]{
 			{
 				topDir1,
@@ -346,8 +323,6 @@ func TestNestedEqualDirs(t *testing.T) {
 }
 
 func TestSeveralNestedDirs(t *testing.T) {
-	finder := newTestFinder()
-
 	topDir1 := &Node[string]{
 		Payload: "td1",
 		Parent:  nil,
@@ -358,10 +333,9 @@ func TestSeveralNestedDirs(t *testing.T) {
 		Parent:  nil,
 	}
 
-	assertNodes(
+	assertTxt(
 		t,
-		finder.FindFromSources(
-			NewTxtSource(`
+		`
 			td1
 				d1
 					f1
@@ -373,8 +347,7 @@ func TestSeveralNestedDirs(t *testing.T) {
 					f1
 				d4
 					f2
-			`),
-		),
+			`,
 		[][]*Node[string]{
 			{
 				topDir1,
@@ -385,23 +358,19 @@ func TestSeveralNestedDirs(t *testing.T) {
 }
 
 func TestNestedNotEqualDirs1(t *testing.T) {
-	finder := newTestFinder()
-
-	assertNodes(
+	assertTxt(
 		t,
-		finder.FindFromSources(
-			NewTxtSource(`
-			td1
-				d1
-					f1
-				d2
-					f2
-			
-			td2
-				d3
-					f1
-			`),
-		),
+		`
+		td1
+			d1
+				f1
+			d2
+				f2
+		
+		td2
+			d3
+				f1
+		`,
 		[][]*Node[string]{
 			{
 				&Node[string]{
@@ -434,12 +403,9 @@ func TestNestedNotEqualDirs1(t *testing.T) {
 }
 
 func TestNestedNotEqualDirs2(t *testing.T) {
-	finder := newTestFinder()
-
-	assertNodes(
+	assertTxt(
 		t,
-		finder.FindFromSources(
-			NewTxtSource(`
+		`
 			td1
 				d1
 					f1
@@ -449,8 +415,7 @@ func TestNestedNotEqualDirs2(t *testing.T) {
 			td2
 				d4
 					f2
-			`),
-		),
+			`,
 		[][]*Node[string]{
 			{
 				&Node[string]{
@@ -483,12 +448,9 @@ func TestNestedNotEqualDirs2(t *testing.T) {
 }
 
 func TestMltipleRootsDuplicatedDirs(t *testing.T) {
-	finder := newTestFinder()
-
-	assertNodes(
+	assertTxt(
 		t,
-		finder.FindFromSources(
-			NewTxtSource(`
+		`
 			td1
 				d1
 					f1
@@ -497,8 +459,7 @@ func TestMltipleRootsDuplicatedDirs(t *testing.T) {
 				d2
 					f1
 				f2
-			`),
-		),
+			`,
 		[][]*Node[string]{
 			{
 				&Node[string]{
@@ -515,24 +476,20 @@ func TestMltipleRootsDuplicatedDirs(t *testing.T) {
 }
 
 func TestTwoEqualDirsOfFour(t *testing.T) {
-	finder := newTestFinder()
-
-	assertNodes(
+	assertTxt(
 		t,
-		finder.FindFromSources(
-			NewTxtSource(`
-			d1
-				f1
-				f2
-			d2
-				f1
-			d3
-				f1
-				f2
-			d4
-				f1
-			`),
-		),
+		`
+		d1
+			f1
+			f2
+		d2
+			f1
+		d3
+			f1
+			f2
+		d4
+			f1
+		`,
 		[][]*Node[string]{
 			{
 				&Node[string]{
@@ -560,12 +517,9 @@ func TestTwoEqualDirsOfFour(t *testing.T) {
 }
 
 func TestDeepNestedEqual(t *testing.T) {
-	finder := newTestFinder()
-
-	assertNodes(
+	assertTxt(
 		t,
-		finder.FindFromSources(
-			NewTxtSource(`
+		`
 			td1
 				p1_3
 					p1_2
@@ -580,8 +534,7 @@ func TestDeepNestedEqual(t *testing.T) {
 							d2
 								f1
 				f2
-			`),
-		),
+			`,
 		[][]*Node[string]{
 			{
 				&Node[string]{
@@ -599,14 +552,28 @@ func TestDeepNestedEqual(t *testing.T) {
 
 type equalPayloadIndexer struct{}
 
-func (i *equalPayloadIndexer) Index(node *Node[string]) interface{} {
-	return node.Payload
+func (i *equalPayloadIndexer) Index(node *Node[string]) (interface{}, error) {
+	return node.Payload, nil
 }
 
 func newTestFinder() *DupFinder[string] {
 	return NewDupFinder([]Indexer[string]{
 		&equalPayloadIndexer{},
 	})
+}
+
+func assertTxt(t *testing.T, txt string, expected [][]*Node[string]) {
+	finder := newTestFinder()
+
+	result, err := finder.FindFromSources(
+		NewTxtSource(txt),
+	)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+
+	assertNodes(t, result, expected)
 }
 
 func assertNodes(t *testing.T, actual [][]*Node[string], expected [][]*Node[string]) {

@@ -7,6 +7,7 @@ import (
 	"df/internal/sources"
 	"flag"
 	"fmt"
+	"log"
 	"slices"
 	"strings"
 )
@@ -30,12 +31,16 @@ func main() {
 		indexers.NewNameSizeFsIndexer(),
 	}
 	if *useHashParam {
-		ixs = append(ixs, indexers.NewHashFsIndexer(0.02))
+		ixs = append(ixs, indexers.NewHashFsIndexer(0.02, true))
 	}
 
 	finder := nodes.NewDupFinder(ixs)
 
-	duplicates := finder.FindFromSources(src)
+	duplicates, err := finder.FindFromSources(src)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	slices.SortFunc(duplicates, func(nodes1, nodes2 []*nodes.Node[sources.FsData]) int {
 		return int(nodes1[0].Payload.Size) - int(nodes2[0].Payload.Size)
 	})

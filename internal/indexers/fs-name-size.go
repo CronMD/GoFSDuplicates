@@ -11,12 +11,12 @@ func NewNameSizeFsIndexer() *NameSizeFsIndexer {
 	return &NameSizeFsIndexer{}
 }
 
-func (ix *NameSizeFsIndexer) Index(node *nodes.Node[sources.FsData]) interface{} {
+func (ix *NameSizeFsIndexer) Index(node *nodes.Node[sources.FsData]) (interface{}, error) {
 	return struct {
 		name string
 		size int64
 	}{
 		node.Payload.Name,
 		node.Payload.Size,
-	}
+	}, nil
 }

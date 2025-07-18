@@ -5,7 +5,7 @@ import (
 )
 
 type Indexer[T any] interface {
-	Index(node *Node[T]) interface{}
+	Index(node *Node[T]) (interface{}, error)
 }
 
 type DupFinder[T any] struct {
@@ -18,7 +18,7 @@ func NewDupFinder[T any](indexers []Indexer[T]) *DupFinder[T] {
 	}
 }
 
-func (f *DupFinder[T]) FindFromSources(srcs ...Source[T]) [][]*Node[T] {
+func (f *DupFinder[T]) FindFromSources(srcs ...Source[T]) ([][]*Node[T], error) {
 	leafs := make([]*Node[T], 0)
 	for _, src := range srcs {
 		for leaf := range src.Leafs() {
@@ -29,19 +29,27 @@ func (f *DupFinder[T]) FindFromSources(srcs ...Source[T]) [][]*Node[T] {
 	return f.FindFromLeafs(leafs...)
 }
 
-func (f *DupFinder[T]) FindFromLeafs(leafs ...*Node[T]) [][]*Node[T] {
-	indexedNodes := f.groupByIndexes(leafs...)
-	return f.mergeParents(indexedNodes)
+func (f *DupFinder[T]) FindFromLeafs(leafs ...*Node[T]) ([][]*Node[T], error) {
+	indexedNodes, err := f.groupByIndexes(leafs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return f.mergeParents(indexedNodes), nil
 }
 
-func (f *DupFinder[T]) groupByIndexes(leafs ...*Node[T]) [][]*Node[T] {
+func (f *DupFinder[T]) groupByIndexes(leafs ...*Node[T]) ([][]*Node[T], error) {
 	result := [][]*Node[T]{leafs}
 	for _, indexer := range f.indexers {
 		newResult := make([][]*Node[T], 0)
 		for _, nodes := range result {
 			groups := make(map[interface{}][]*Node[T])
 			for _, node := range nodes {
-				index := indexer.Index(node)
+				index, err := indexer.Index(node)
+				if err != nil {
+					return nil, err
+				}
+
 				if _, ok := groups[index]; !ok {
 					groups[index] = make([]*Node[T], 0)
 				}
@@ -56,7 +64,7 @@ func (f *DupFinder[T]) groupByIndexes(leafs ...*Node[T]) [][]*Node[T] {
 		result = newResult
 	}
 
-	return result
+	return result, nil
 }
 
 func (f *DupFinder[T]) mergeParents(dups [][]*Node[T]) [][]*Node[T] {

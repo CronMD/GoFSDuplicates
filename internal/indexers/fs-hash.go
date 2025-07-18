@@ -11,20 +11,22 @@ import (
 )
 
 type HashFsIndexer struct {
-	percentage float64
+	percentage     float64
+	suppressErrors bool
 }
 
-func NewHashFsIndexer(readPercentage float64) *HashFsIndexer {
+func NewHashFsIndexer(readPercentage float64, suppressErrors bool) *HashFsIndexer {
 	if readPercentage > 0.5 || readPercentage < 0 {
 		panic("readPercentage of NewHashFsIndexer must be 0 > readPercentage > 0.5")
 	}
 
 	return &HashFsIndexer{
-		percentage: readPercentage,
+		percentage:     readPercentage,
+		suppressErrors: suppressErrors,
 	}
 }
 
-func (ix *HashFsIndexer) Index(node *nodes.Node[sources.FsData]) interface{} {
+func (ix *HashFsIndexer) Index(node *nodes.Node[sources.FsData]) (interface{}, error) {
 	type segment struct {
 		start int64
 		end   int64
@@ -32,15 +34,21 @@ func (ix *HashFsIndexer) Index(node *nodes.Node[sources.FsData]) interface{} {
 
 	f, err := os.Open(node.Payload.Path)
 	if err != nil {
-		log.Println(err)
-		return nil
+		if ix.suppressErrors {
+			log.Println(err)
+			return nil, nil
+		}
+		return nil, err
 	}
 	defer f.Close()
 
 	info, err := f.Stat()
 	if err != nil {
-		log.Println(err)
-		return nil
+		if ix.suppressErrors {
+			log.Println(err)
+			return nil, nil
+		}
+		return nil, err
 	}
 
 	size := info.Size()
@@ -60,21 +68,30 @@ func (ix *HashFsIndexer) Index(node *nodes.Node[sources.FsData]) interface{} {
 
 	for _, sgmt := range segments {
 		if _, err := f.Seek(sgmt.start, 0); err != nil {
-			log.Println(err)
-			return nil
+			if ix.suppressErrors {
+				log.Println(err)
+				return nil, nil
+			}
+			return nil, err
 		}
 
 		buf := make([]byte, sgmt.end-sgmt.start)
 		if _, err := f.Read(buf); err != nil {
-			log.Println(err)
-			return nil
+			if ix.suppressErrors {
+				log.Println(err)
+				return nil, nil
+			}
+			return nil, err
 		}
 
 		if _, err := hasher.Write(buf); err != nil {
-			log.Println(err)
-			return nil
+			if ix.suppressErrors {
+				log.Println(err)
+				return nil, nil
+			}
+			return nil, err
 		}
 	}
 
-	return hex.EncodeToString(hasher.Sum(nil))
+	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
