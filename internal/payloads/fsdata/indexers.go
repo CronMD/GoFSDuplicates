@@ -1,9 +1,8 @@
-package indexers
+package fsdata
 
 import (
 	"crypto/md5"
 	"df/internal/nodes"
-	"df/internal/sources"
 	"encoding/hex"
 	"log"
 	"math"
@@ -26,7 +25,7 @@ func NewHashFsIndexer(readPercentage float64, suppressErrors bool) *HashFsIndexe
 	}
 }
 
-func (ix *HashFsIndexer) Index(node *nodes.Node[sources.FsData]) (interface{}, error) {
+func (ix *HashFsIndexer) Index(node *nodes.Node[FsData]) (interface{}, error) {
 	type segment struct {
 		start int64
 		end   int64
@@ -94,4 +93,20 @@ func (ix *HashFsIndexer) Index(node *nodes.Node[sources.FsData]) (interface{}, e
 	}
 
 	return hex.EncodeToString(hasher.Sum(nil)), nil
+}
+
+type NameSizeFsIndexer struct{}
+
+func NewNameSizeFsIndexer() *NameSizeFsIndexer {
+	return &NameSizeFsIndexer{}
+}
+
+func (ix *NameSizeFsIndexer) Index(node *nodes.Node[FsData]) (interface{}, error) {
+	return struct {
+		name string
+		size int64
+	}{
+		node.Payload.Name,
+		node.Payload.Size,
+	}, nil
 }

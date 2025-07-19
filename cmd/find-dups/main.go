@@ -2,9 +2,8 @@ package main
 
 import (
 	humansize "df/cmd/find-dups/human-size"
-	"df/internal/indexers"
 	"df/internal/nodes"
-	"df/internal/sources"
+	"df/internal/payloads/fsdata"
 	"flag"
 	"fmt"
 	"log"
@@ -26,13 +25,13 @@ func main() {
 		}
 	}
 
-	src := sources.NewMultipleDirsFsDataSource(dirs...)
+	src := fsdata.NewMultipleDirsFsDataSource(dirs...)
 
-	ixs := []nodes.Indexer[sources.FsData]{
-		indexers.NewNameSizeFsIndexer(),
+	ixs := []nodes.Indexer[fsdata.FsData]{
+		fsdata.NewNameSizeFsIndexer(),
 	}
 	if *useHashParam {
-		ixs = append(ixs, indexers.NewHashFsIndexer(0.02, !*failOnError))
+		ixs = append(ixs, fsdata.NewHashFsIndexer(0.02, !*failOnError))
 	}
 
 	finder := nodes.NewDupFinder(ixs)
@@ -42,7 +41,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	slices.SortFunc(duplicates, func(nodes1, nodes2 []*nodes.Node[sources.FsData]) int {
+	slices.SortFunc(duplicates, func(nodes1, nodes2 []*nodes.Node[fsdata.FsData]) int {
 		return int(nodes1[0].Payload.Size) - int(nodes2[0].Payload.Size)
 	})
 	for _, nodes := range duplicates {

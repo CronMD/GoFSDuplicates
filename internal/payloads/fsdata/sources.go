@@ -1,4 +1,4 @@
-package sources
+package fsdata
 
 import (
 	"df/internal/nodes"
@@ -9,13 +9,6 @@ import (
 	"path/filepath"
 	"sync"
 )
-
-type FsData struct {
-	Path   string
-	Name   string
-	Size   int64
-	IsFile bool
-}
 
 type MultipleDirsFsDataSource struct {
 	dirsPaths []string
