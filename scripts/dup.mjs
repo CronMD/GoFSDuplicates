@@ -57,6 +57,10 @@ function parseLeafs(txt) {
                                 parent: siblings.length > 0 ? siblings[0].parent : null,
                             })
                         } else if (spacesDiff > 0) {
+                            siblings
+                                .slice(0, siblings.length - 1)
+                                .forEach(node => leafs.push(node))
+                            
                             siblings = [{
                                 payload,
                                 parent: siblings[siblings.length - 1] || null,
@@ -144,6 +148,56 @@ test('two dirs with files', () => {
             {payload: 'f2', parent: {payload: 'd1', parent: null},},
             {payload: 'f3', parent: {payload: 'd2', parent: null},},
             {payload: 'f4', parent: {payload: 'd2', parent: null},},
+        ],
+    )
+})
+
+test('multilevel', () => {
+    assert.deepEqual(
+        parseLeafs(`
+	 	d1
+			f1
+			f2
+		d2
+			d3
+				f3
+				f4
+			d4
+				f1
+				f2
+        `),
+        [
+            {payload: 'f1', parent: {payload: 'd1', parent: null},},
+            {payload: 'f2', parent: {payload: 'd1', parent: null},},
+            {payload: 'f3', parent: {payload: 'd3', parent: {payload: 'd2', parent: null}},},
+            {payload: 'f4', parent: {payload: 'd3', parent: {payload: 'd2', parent: null}},},
+            {payload: 'f1', parent: {payload: 'd4', parent: {payload: 'd2', parent: null}},},
+            {payload: 'f2', parent: {payload: 'd4', parent: {payload: 'd2', parent: null}},},
+        ],
+    )
+})
+
+test('multilevel2', () => {
+    assert.deepEqual(
+        parseLeafs(`
+	 	d1
+			d2
+				f3
+				d3
+					f4
+			d4
+				f1
+				f2
+			f1
+			f2
+        `),
+        [
+            {payload: 'f3', parent: {payload: 'd2', parent: {payload: 'd1', parent: null}},},
+            {payload: 'f4', parent: {payload: 'd3', parent: {payload: 'd2', parent: {payload: 'd1', parent: null}}},},
+            {payload: 'f1', parent: {payload: 'd4', parent: {payload: 'd1', parent: null}},},
+            {payload: 'f2', parent: {payload: 'd4', parent: {payload: 'd1', parent: null}},},
+            {payload: 'f1', parent: {payload: 'd1', parent: null,}},
+            {payload: 'f2', parent: {payload: 'd1', parent: null,}},
         ],
     )
 })
