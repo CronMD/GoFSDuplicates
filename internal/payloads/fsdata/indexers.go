@@ -9,20 +9,40 @@ import (
 	"os"
 )
 
+type hashFsIndexerOption func(ix *HashFsIndexer)
+
+func WithSuppressHashIndexErrors(val bool) hashFsIndexerOption {
+	return func(ix *HashFsIndexer) {
+		ix.suppressErrors = val
+	}
+}
+
+func WithHashIndexPercentage(val float64) hashFsIndexerOption {
+	if val > 0.5 || val < 0 {
+		panic("readPercentage of NewHashFsIndexer must be 0 > readPercentage > 0.5")
+	}
+
+	return func(ix *HashFsIndexer) {
+		ix.percentage = val
+	}
+}
+
 type HashFsIndexer struct {
 	percentage     float64
 	suppressErrors bool
 }
 
-func NewHashFsIndexer(readPercentage float64, suppressErrors bool) *HashFsIndexer {
-	if readPercentage > 0.5 || readPercentage < 0 {
-		panic("readPercentage of NewHashFsIndexer must be 0 > readPercentage > 0.5")
+func NewHashFsIndexer(opts ...hashFsIndexerOption) *HashFsIndexer {
+	ix := &HashFsIndexer{
+		percentage:     0.02,
+		suppressErrors: true,
 	}
 
-	return &HashFsIndexer{
-		percentage:     readPercentage,
-		suppressErrors: suppressErrors,
+	for _, opt := range opts {
+		opt(ix)
 	}
+
+	return ix
 }
 
 func (ix *HashFsIndexer) Index(node *nodes.Node[FsData]) (interface{}, error) {

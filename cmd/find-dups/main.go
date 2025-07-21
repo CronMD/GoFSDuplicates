@@ -31,7 +31,9 @@ func main() {
 		fsdata.NewNameSizeFsIndexer(),
 	}
 	if *useHashParam {
-		ixs = append(ixs, fsdata.NewHashFsIndexer(0.02, !*failOnError))
+		ixs = append(ixs, fsdata.NewHashFsIndexer(
+			fsdata.WithSuppressHashIndexErrors(!*failOnError)))
+		// ixs = append(ixs, fsdata.NewHashFsIndexer(0.02, !*failOnError))
 	}
 
 	finder := nodes.NewDupFinder(ixs)
