@@ -1,6 +1,7 @@
 package nodes
 
 import (
+	"log"
 	"slices"
 )
 
@@ -30,6 +31,8 @@ func (f *DupFinder[T]) FindFromSources(srcs ...Source[T]) ([][]*Node[T], error) 
 }
 
 func (f *DupFinder[T]) FindFromLeafs(leafs ...*Node[T]) ([][]*Node[T], error) {
+	log.Println("got", len(leafs))
+
 	indexedNodes, err := f.groupByIndexes(leafs...)
 	if err != nil {
 		return nil, err

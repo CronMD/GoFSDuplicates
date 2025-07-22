@@ -15,6 +15,7 @@ func main() {
 	dirsParam := flag.String("dirs", "", "comma separated dir paths")
 	useHashParam := flag.Bool("hash", false, "check files hashes")
 	failOnError := flag.Bool("fail", false, "fail on error")
+	onlyDirs := flag.Bool("only-dirs", false, "show only duplicated directories")
 	flag.Parse()
 
 	dirs := make([]string, 0)
@@ -51,6 +52,10 @@ func main() {
 		}
 
 		if nodes[0].Payload.IsFile {
+			if *onlyDirs {
+				continue
+			}
+
 			fmt.Println("File:")
 		} else {
 			fmt.Println("Dir:")
