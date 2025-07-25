@@ -1,6 +1,7 @@
 package fsdata
 
 import (
+	"context"
 	"df/internal/nodes"
 	"fmt"
 	"io/fs"
@@ -11,33 +12,74 @@ import (
 )
 
 type MultipleDirsFsDataSource struct {
-	dirsPaths []string
+	dirsPaths   []string
+	failOnError bool
 }
 
-func NewMultipleDirsFsDataSource(dirsPaths ...string) *MultipleDirsFsDataSource {
-	return &MultipleDirsFsDataSource{
-		dirsPaths: dirsPaths,
+type multipleDirsFsDataSourceOption func(src *MultipleDirsFsDataSource)
+
+func MulDirsDataSrcWithDirs(dirsPaths ...string) multipleDirsFsDataSourceOption {
+	return func(src *MultipleDirsFsDataSource) {
+		src.dirsPaths = make([]string, len(dirsPaths))
+		copy(src.dirsPaths, dirsPaths)
 	}
 }
 
-func (s *MultipleDirsFsDataSource) Leafs() iter.Seq[*nodes.Node[FsData]] {
+func MulDirsDataSrcWithDFailOnError(val bool) multipleDirsFsDataSourceOption {
+	return func(src *MultipleDirsFsDataSource) {
+		src.failOnError = val
+	}
+}
+
+func NewMultipleDirsFsDataSource(
+	opts ...multipleDirsFsDataSourceOption,
+) *MultipleDirsFsDataSource {
+	src := &MultipleDirsFsDataSource{
+		dirsPaths:   nil,
+		failOnError: false,
+	}
+
+	for _, opt := range opts {
+		opt(src)
+	}
+
+	return src
+}
+
+func (s *MultipleDirsFsDataSource) Leafs() iter.Seq2[*nodes.Node[FsData], error] {
 	dirsNumber := len(s.dirsPaths)
 	var dirsWg sync.WaitGroup
-
 	dirsWg.Add(dirsNumber)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var dirsErr error = nil
+
 	dirsLeafs := make([][]*nodes.Node[FsData], dirsNumber)
 	for i := 0; i < dirsNumber; i++ {
 		go func(num int) {
-			dirsLeafs[num] = s.readDir(s.dirsPaths[num])
+			dirsLeafs[num], dirsErr = s.readDir(ctx, s.dirsPaths[num])
 			dirsWg.Done()
+			if dirsErr != nil {
+				cancel()
+				log.Println(s.dirsPaths[i], "[fail]")
+				return
+			}
+
+			log.Println(s.dirsPaths[i], "[done]")
 		}(i)
 	}
 	dirsWg.Wait()
 
-	return func(yield func(*nodes.Node[FsData]) bool) {
+	return func(yield func(*nodes.Node[FsData], error) bool) {
+		if dirsErr != nil {
+			yield(nil, dirsErr)
+			return
+		}
+
 		for _, leafs := range dirsLeafs {
 			for _, leaf := range leafs {
-				if !yield(leaf) {
+				if !yield(leaf, nil) {
 					return
 				}
 			}
@@ -45,22 +87,37 @@ func (s *MultipleDirsFsDataSource) Leafs() iter.Seq[*nodes.Node[FsData]] {
 	}
 }
 
-func (s *MultipleDirsFsDataSource) readDir(dirPath string) []*nodes.Node[FsData] {
+func (s *MultipleDirsFsDataSource) readDir(ctx context.Context, dirPath string) ([]*nodes.Node[FsData], error) {
 	if dirPath[len(dirPath)-1] != filepath.Separator {
 		dirPath = fmt.Sprintf("%s%c", dirPath, filepath.Separator)
 	}
 
 	parents := map[string]*nodes.Node[FsData]{}
 	leafs := make([]*nodes.Node[FsData], 0)
-	filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("%s [interrupted]", dirPath)
+		default:
+			break
+		}
+
 		if err != nil {
 			log.Println(err)
+
+			if s.failOnError {
+				return err
+			}
 			return nil
 		}
 
 		info, err := d.Info()
 		if err != nil {
 			log.Println(err)
+
+			if s.failOnError {
+				return err
+			}
 			return nil
 		}
 
@@ -87,6 +144,10 @@ func (s *MultipleDirsFsDataSource) readDir(dirPath string) []*nodes.Node[FsData]
 		return nil
 	})
 
+	if err != nil {
+		return nil, err
+	}
+
 	for _, node := range leafs {
 		size := node.Payload.Size
 		for node.Parent != nil {
@@ -95,5 +156,5 @@ func (s *MultipleDirsFsDataSource) readDir(dirPath string) []*nodes.Node[FsData]
 		}
 	}
 
-	return leafs
+	return leafs, nil
 }

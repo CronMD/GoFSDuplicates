@@ -228,10 +228,15 @@ func TestMultiLevel2(t *testing.T) {
 
 func assertLeafs(
 	t *testing.T,
-	leafsSeq iter.Seq[*Node[string]],
+	leafsSeq iter.Seq2[*Node[string], error],
 	expected ...*Node[string]) {
 	actual := []*Node[string]{}
-	for leaf := range leafsSeq {
+	for leaf, leafErr := range leafsSeq {
+		if leafErr != nil {
+			t.Fatal(leafErr)
+			return
+		}
+
 		actual = append(actual, leaf)
 	}
 

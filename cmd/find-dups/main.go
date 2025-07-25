@@ -26,7 +26,10 @@ func main() {
 		}
 	}
 
-	src := fsdata.NewMultipleDirsFsDataSource(dirs...)
+	src := fsdata.NewMultipleDirsFsDataSource(
+		fsdata.MulDirsDataSrcWithDirs(dirs...),
+		fsdata.MulDirsDataSrcWithDFailOnError(*failOnError),
+	)
 
 	ixs := []nodes.Indexer[fsdata.FsData]{
 		fsdata.NewNameSizeFsIndexer(),

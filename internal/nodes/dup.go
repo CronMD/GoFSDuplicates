@@ -22,7 +22,11 @@ func NewDupFinder[T any](indexers []Indexer[T]) *DupFinder[T] {
 func (f *DupFinder[T]) FindFromSources(srcs ...Source[T]) ([][]*Node[T], error) {
 	leafs := make([]*Node[T], 0)
 	for _, src := range srcs {
-		for leaf := range src.Leafs() {
+		for leaf, leafErr := range src.Leafs() {
+			if leafErr != nil {
+				return nil, leafErr
+			}
+
 			leafs = append(leafs, leaf)
 		}
 	}

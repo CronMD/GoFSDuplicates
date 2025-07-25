@@ -17,9 +17,9 @@ func NewTxtSource(txt string) *TxtSource {
 	}
 }
 
-func (s *TxtSource) Leafs() iter.Seq[*Node[string]] {
+func (s *TxtSource) Leafs() iter.Seq2[*Node[string], error] {
 
-	return func(yield func(*Node[string]) bool) {
+	return func(yield func(*Node[string], error) bool) {
 		(&txtFsa{
 			txt:        []rune(s.txt),
 			curPayload: make([]rune, 0),
@@ -37,7 +37,7 @@ type txtFsa struct {
 	prevSpaces  int
 	pos         int
 	curPayload  []rune
-	yield       func(*Node[string]) bool
+	yield       func(*Node[string], error) bool
 	siblings    []*Node[string]
 }
 
@@ -64,7 +64,7 @@ func (f *txtFsa) search() state {
 		return f.search
 	case 0:
 		for _, node := range f.siblings {
-			if !f.yield(node) {
+			if !f.yield(node, nil) {
 				return nil
 			}
 		}
@@ -98,7 +98,7 @@ func (f *txtFsa) entry() state {
 			var parent *Node[string] = nil
 			if len(f.siblings) > 0 {
 				for _, node := range f.siblings[0 : len(f.siblings)-1] {
-					if !f.yield(node) {
+					if !f.yield(node, nil) {
 						return nil
 					}
 				}
@@ -113,7 +113,7 @@ func (f *txtFsa) entry() state {
 			f.siblings = []*Node[string]{node}
 		} else if spacesDiff < 0 {
 			for _, node := range f.siblings {
-				if !f.yield(node) {
+				if !f.yield(node, nil) {
 					return nil
 				}
 			}

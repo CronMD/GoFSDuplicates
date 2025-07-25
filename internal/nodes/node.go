@@ -20,5 +20,5 @@ func (n *Node[T]) String() string {
 }
 
 type Source[T any] interface {
-	Leafs() iter.Seq[*Node[T]]
+	Leafs() iter.Seq2[*Node[T], error]
 }
