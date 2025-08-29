@@ -58,6 +58,7 @@ func main() {
 	slices.SortFunc(duplicates, func(nodes1, nodes2 []*nodes.Node[fsdata.FsData]) int {
 		return int(nodes1[0].Payload.Size) - int(nodes2[0].Payload.Size)
 	})
+	var ttlDupsSizeSum int64 = 0
 	for _, nodes := range duplicates {
 		if len(nodes) < 2 {
 			continue
@@ -99,7 +100,12 @@ func main() {
 				node.Payload.Path,
 				humansize.SizeToString(node.Payload.Size))
 		}
+		ttlDupsSizeSum += nodes[0].Payload.Size * int64(len(nodes)-1)
 
 		fmt.Println()
 	}
+
+	fmt.Printf(
+		"Estimated duplicates size %s\n",
+		humansize.SizeToString(ttlDupsSizeSum))
 }
