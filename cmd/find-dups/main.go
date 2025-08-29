@@ -19,9 +19,9 @@ type AppParams interface {
 	DirsFilters() []string
 }
 
-func main() {
-	params := appparams.NewCmdLineParams()
+var params AppParams = appparams.NewCmdLineParams()
 
+func main() {
 	src := fsdata.NewMultipleDirsFsDataSource(
 		fsdata.MulDirsDataSrcWithDirs(params.Dirs()...),
 		fsdata.MulDirsDataSrcWithDFailOnError(params.FailOnError()),
