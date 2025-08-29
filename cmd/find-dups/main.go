@@ -1,51 +1,38 @@
 package main
 
 import (
+	appparams "df/cmd/find-dups/app-params"
 	humansize "df/cmd/find-dups/human-size"
 	"df/internal/nodes"
 	"df/internal/payloads/fsdata"
-	"flag"
 	"fmt"
 	"log"
 	"slices"
 	"strings"
 )
 
+type AppParams interface {
+	Dirs() []string
+	UseHash() bool
+	FailOnError() bool
+	DirsOnly() bool
+	DirsFilters() []string
+}
+
 func main() {
-	dirsParam := flag.String("dirs", "", "comma separated dir paths")
-	useHashParam := flag.Bool("hash", false, "check files hashes")
-	failOnErrorParam := flag.Bool("fail", false, "fail on error")
-	onlyDirsParam := flag.Bool("only-dirs", false, "show only duplicated directories")
-	filterDirsParam := flag.String("filter", "", "comma separted paths")
-	flag.Parse()
-
-	dirs := make([]string, 0)
-	for _, dir := range strings.Split(strings.Trim(*dirsParam, " "), ",") {
-		dir = strings.Trim(dir, " ")
-		if dir != "" {
-			dirs = append(dirs, dir)
-		}
-	}
-
-	pathFilters := make([]string, 0)
-	for _, path := range strings.Split(strings.Trim(*filterDirsParam, " "), ",") {
-		path = strings.Trim(path, " ")
-		if path != "" {
-			pathFilters = append(pathFilters, strings.ToLower(path))
-		}
-	}
+	params := appparams.NewCmdLineParams()
 
 	src := fsdata.NewMultipleDirsFsDataSource(
-		fsdata.MulDirsDataSrcWithDirs(dirs...),
-		fsdata.MulDirsDataSrcWithDFailOnError(*failOnErrorParam),
+		fsdata.MulDirsDataSrcWithDirs(params.Dirs()...),
+		fsdata.MulDirsDataSrcWithDFailOnError(params.FailOnError()),
 	)
 
 	ixs := []nodes.Indexer[fsdata.FsData]{
 		fsdata.NewNameSizeFsIndexer(),
 	}
-	if *useHashParam {
+	if params.UseHash() {
 		ixs = append(ixs, fsdata.NewHashFsIndexer(
-			fsdata.WithSuppressHashIndexErrors(!*failOnErrorParam)))
+			fsdata.WithSuppressHashIndexErrors(!params.FailOnError())))
 	}
 
 	finder := nodes.NewDupFinder(ixs)
@@ -64,11 +51,11 @@ func main() {
 			continue
 		}
 
-		if len(pathFilters) > 0 {
+		if len(params.DirsFilters()) > 0 {
 			show := false
 
 			for _, node := range nodes {
-				for _, filter := range pathFilters {
+				for _, filter := range params.DirsFilters() {
 					if strings.Index(strings.ToLower(node.Payload.Path), filter) == 0 {
 						show = true
 						break
@@ -85,7 +72,7 @@ func main() {
 		}
 
 		if nodes[0].Payload.IsFile {
-			if *onlyDirsParam {
+			if params.DirsOnly() {
 				continue
 			}
 
