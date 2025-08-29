@@ -14,8 +14,9 @@ import (
 func main() {
 	dirsParam := flag.String("dirs", "", "comma separated dir paths")
 	useHashParam := flag.Bool("hash", false, "check files hashes")
-	failOnError := flag.Bool("fail", false, "fail on error")
-	onlyDirs := flag.Bool("only-dirs", false, "show only duplicated directories")
+	failOnErrorParam := flag.Bool("fail", false, "fail on error")
+	onlyDirsParam := flag.Bool("only-dirs", false, "show only duplicated directories")
+	filterDirsParam := flag.String("filter", "", "comma separted paths")
 	flag.Parse()
 
 	dirs := make([]string, 0)
@@ -26,9 +27,17 @@ func main() {
 		}
 	}
 
+	pathFilters := make([]string, 0)
+	for _, path := range strings.Split(strings.Trim(*filterDirsParam, " "), ",") {
+		path = strings.Trim(path, " ")
+		if path != "" {
+			pathFilters = append(pathFilters, strings.ToLower(path))
+		}
+	}
+
 	src := fsdata.NewMultipleDirsFsDataSource(
 		fsdata.MulDirsDataSrcWithDirs(dirs...),
-		fsdata.MulDirsDataSrcWithDFailOnError(*failOnError),
+		fsdata.MulDirsDataSrcWithDFailOnError(*failOnErrorParam),
 	)
 
 	ixs := []nodes.Indexer[fsdata.FsData]{
@@ -36,7 +45,7 @@ func main() {
 	}
 	if *useHashParam {
 		ixs = append(ixs, fsdata.NewHashFsIndexer(
-			fsdata.WithSuppressHashIndexErrors(!*failOnError)))
+			fsdata.WithSuppressHashIndexErrors(!*failOnErrorParam)))
 	}
 
 	finder := nodes.NewDupFinder(ixs)
@@ -54,8 +63,28 @@ func main() {
 			continue
 		}
 
+		if len(pathFilters) > 0 {
+			show := false
+
+			for _, node := range nodes {
+				for _, filter := range pathFilters {
+					if strings.Index(strings.ToLower(node.Payload.Path), filter) == 0 {
+						show = true
+						break
+					}
+				}
+				if show {
+					break
+				}
+			}
+
+			if !show {
+				continue
+			}
+		}
+
 		if nodes[0].Payload.IsFile {
-			if *onlyDirs {
+			if *onlyDirsParam {
 				continue
 			}
 
