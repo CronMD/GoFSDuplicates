@@ -78,7 +78,10 @@ func main() {
 		return int(nodes1[0].Payload.Size) - int(nodes2[0].Payload.Size)
 	})
 	var ttlDupsSizeSum int64 = 0
+	var ttlVolumeSize int64 = 0
 	for _, nodes := range duplicates {
+		ttlVolumeSize += nodes[0].Payload.Size
+
 		show := true
 		for _, filter := range resultFilters {
 			if !filter(nodes) {
@@ -108,6 +111,7 @@ func main() {
 	}
 
 	fmt.Printf(
-		"Estimated duplicates size %s\n",
-		humansize.SizeToString(ttlDupsSizeSum))
+		"Estimated duplicates size ~%s (scanned ~%s)\n",
+		humansize.SizeToString(ttlDupsSizeSum),
+		humansize.SizeToString(ttlVolumeSize))
 }
