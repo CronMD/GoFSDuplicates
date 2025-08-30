@@ -19,6 +19,8 @@ type AppParams interface {
 	DirsFilters() []string
 }
 
+type resultFilter func(nodes []*nodes.Node[fsdata.FsData]) bool
+
 var params AppParams = appparams.NewCmdLineParams()
 
 func main() {
@@ -42,16 +44,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	slices.SortFunc(duplicates, func(nodes1, nodes2 []*nodes.Node[fsdata.FsData]) int {
-		return int(nodes1[0].Payload.Size) - int(nodes2[0].Payload.Size)
-	})
-	var ttlDupsSizeSum int64 = 0
-	for _, nodes := range duplicates {
-		if len(nodes) < 2 {
-			continue
-		}
-
-		if len(params.DirsFilters()) > 0 {
+	resultFilters := []resultFilter{
+		func(nodes []*nodes.Node[fsdata.FsData]) bool {
+			return len(nodes) >= 2
+		},
+	}
+	if len(params.DirsFilters()) > 0 {
+		resultFilters = append(resultFilters, func(nodes []*nodes.Node[fsdata.FsData]) bool {
 			show := false
 
 			for _, node := range nodes {
@@ -66,16 +65,32 @@ func main() {
 				}
 			}
 
-			if !show {
-				continue
+			return show
+		})
+	}
+	if params.DirsOnly() {
+		resultFilters = append(resultFilters, func(nodes []*nodes.Node[fsdata.FsData]) bool {
+			return !nodes[0].Payload.IsFile
+		})
+	}
+
+	slices.SortFunc(duplicates, func(nodes1, nodes2 []*nodes.Node[fsdata.FsData]) int {
+		return int(nodes1[0].Payload.Size) - int(nodes2[0].Payload.Size)
+	})
+	var ttlDupsSizeSum int64 = 0
+	for _, nodes := range duplicates {
+		show := true
+		for _, filter := range resultFilters {
+			if !filter(nodes) {
+				show = false
+				break
 			}
+		}
+		if !show {
+			continue
 		}
 
 		if nodes[0].Payload.IsFile {
-			if params.DirsOnly() {
-				continue
-			}
-
 			fmt.Println("File:")
 		} else {
 			fmt.Println("Dir:")
