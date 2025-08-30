@@ -15,6 +15,7 @@ func TestSizeToString(t *testing.T) {
 		{"kilobytes", args{21512}, "22 Kb"},
 		{"megabytes", args{14_221_512}, "14 Mb"},
 		{"megabytes", args{14_235_221_512}, "14.2 Gb"},
+		{"megabytes", args{1_404_235_221_512}, "1.4 Tb"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
