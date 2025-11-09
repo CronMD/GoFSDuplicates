@@ -21,21 +21,15 @@ type AppParams interface {
 
 type resultFilter func(nodes []*nodes.Node[fsdata.FsData]) bool
 
-var params AppParams = appparams.NewCmdLineParams()
-
 func main() {
+	var params AppParams = appparams.NewCmdLineParams()
+
 	src := fsdata.NewMultipleDirsFsDataSource(
 		fsdata.MulDirsDataSrcWithDirs(params.Dirs()...),
 		fsdata.MulDirsDataSrcWithDFailOnError(params.FailOnError()),
 	)
-
-	ixs := []nodes.Indexer[fsdata.FsData]{
-		fsdata.NewNameSizeFsIndexer(),
-	}
-	if params.UseHash() {
-		ixs = append(ixs, fsdata.NewHashFsIndexer(
-			fsdata.WithSuppressHashIndexErrors(!params.FailOnError())))
-	}
+	ixs := buildIndexers(params)
+	resultFilters := buildResultFilters(params)
 
 	finder := nodes.NewDupFinder(ixs)
 
@@ -44,6 +38,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	printDuplicates(duplicates, resultFilters)
+}
+
+func buildResultFilters(params AppParams) []resultFilter {
 	resultFilters := []resultFilter{
 		func(nodes []*nodes.Node[fsdata.FsData]) bool {
 			return len(nodes) >= 2
@@ -74,6 +72,22 @@ func main() {
 		})
 	}
 
+	return resultFilters
+}
+
+func buildIndexers(params AppParams) []nodes.Indexer[fsdata.FsData] {
+	ixs := []nodes.Indexer[fsdata.FsData]{
+		fsdata.NewNameSizeFsIndexer(),
+	}
+	if params.UseHash() {
+		ixs = append(ixs, fsdata.NewHashFsIndexer(
+			fsdata.WithSuppressHashIndexErrors(!params.FailOnError())))
+	}
+
+	return ixs
+}
+
+func printDuplicates(duplicates [][]*nodes.Node[fsdata.FsData], resultFilters []resultFilter) {
 	slices.SortFunc(duplicates, func(nodes1, nodes2 []*nodes.Node[fsdata.FsData]) int {
 		return int(nodes1[0].Payload.Size) - int(nodes2[0].Payload.Size)
 	})
